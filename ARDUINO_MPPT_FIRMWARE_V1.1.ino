@@ -95,13 +95,27 @@ Adafruit_ADS1015 ads;               //SYSTEM PARAMETER  - ADS1015 ADC Library (B
 #define buck_IN         33          //SYSTEM PARAMETER - Buck MOSFET Driver PWM Pin
 #define buck_EN         32          //SYSTEM PARAMETER - Buck MOSFET Driver Enable Pin
 #define LED             2           //SYSTEM PARAMETER - LED Indicator GPIO Pin
-#define FAN             16          //SYSTEM PARAMETER - Fan GPIO Pin
 #define ADC_ALERT       34          //SYSTEM PARAMETER - Fan GPIO Pin
-#define TempSensor      35          //SYSTEM PARAMETER - Temperature Sensor GPIO Pin
 #define buttonLeft      18          //SYSTEM PARAMETER - 
 #define buttonRight     17          //SYSTEM PARAMETER -
 #define buttonBack      19          //SYSTEM PARAMETER - 
 #define buttonSelect    23          //SYSTEM PARAMETER -
+
+// Fan
+const int FAN_PIN = 16;               // SYSTEM PARAMETER - Fan GPIO Pin
+const int FAN_PWM_CHANNEL = 2;        // SYSTEM PARAMETER - Channel for fan PWM
+const int TEMP_SENSOR_PIN = 35;       // SYSTEM PARAMETER - Temperature Sensor GPIO Pin
+const int FAN_PWM_MIN = 35;           // CALIB PARAMETER  - Minimun fan PWM (0-100). Two-wire fans do not operate below 35%
+const int FAN_PWM_RESOLUTION = 8;     // CALIB PARAMETER  - Fan PWM resolution. (8-15). More resolution, more slow fan response
+const int FAN_PWM_FRECUENCY = 16000;  // CALIB PARAMETER  - Fan PWM frecuency. Change can reduce noise.
+const int AVERAGE_TEMPERATURE = 128;  // CALIB PARAMETER  - Temperature Sensor Average Sampling
+const int FAN_THRESHOLD = 5;          // CALIB PARAMETER  - Temperature THRESHOLD for fan DYNAMIC mode
+const float NTC_RESISTANCE = 10000.0; // CALIB PARAMETER  - NTC temp sensor's resistance. Change to 10000.0 if you are using a 10k NTC
+
+// EEPROM address
+const int EEPROM_FANMODE = 7;
+const int EEPROM_FANTRIGGERTEMPERATURE = 8;
+const int EEPROM_MAXBOARDTEMPERATURE = 9;
 
 //========================================= WiFi SSID ==============================================//
 // This MPPT firmware uses the Blynk phone app and arduino library for controls and data telemetry  //
@@ -124,17 +138,15 @@ output_Mode             = 1,           //   USER PARAMETER - 0 = PSU MODE, 1 = C
 disableFlashAutoLoad    = 0,           //   USER PARAMETER - Forces the MPPT to not use flash saved settings, enabling this "1" defaults to programmed firmware settings.
 enablePPWM              = 1,           //   USER PARAMETER - Enables Predictive PWM, this accelerates regulation speed (only applicable for battery charging application)
 enableWiFi              = 1,           //   USER PARAMETER - Enable WiFi Connection
-enableFan               = 1,           //   USER PARAMETER - Enable Cooling Fan
 enableBluetooth         = 1,           //   USER PARAMETER - Enable Bluetooth Connection
 enableLCD               = 1,           //   USER PARAMETER - Enable LCD display
-enableLCDBacklight      = 1,           //   USER PARAMETER - Enable LCD display's backlight
-overrideFan             = 0,           //   USER PARAMETER - Fan always on
-enableDynamicCooling    = 0;           //   USER PARAMETER - Enable for PWM cooling control 
+enableLCDBacklight      = 1;           //   USER PARAMETER - Enable LCD display's backlight
 int
 serialTelemMode         = 1,           //  USER PARAMETER - Selects serial telemetry data feed (0 - Disable Serial, 1 - Display All Data, 2 - Display Essential, 3 - Number only)
 pwmResolution           = 11,          //  USER PARAMETER - PWM Bit Resolution 
 pwmFrequency            = 39000,       //  USER PARAMETER - PWM Switching Frequency - Hz (For Buck)
-temperatureFan          = 60,          //  USER PARAMETER - Temperature threshold for fan to turn on
+fanMode                 = 3,           //  USER PARAMETER - 0=ALWAYS OFF, 1=ALWAYS ON, 2=ON WHEN FAN TEMPERATURE REACHED, 3=DYNAMIC PWM COOLING MODE
+fanTriggerTemperature   = 60,          //  USER PARAMETER - Temperature threshold for fan to turn on
 temperatureMax          = 90,          //  USER PARAMETER - Overtemperature, System Shudown When Exceeded (deg C)
 telemCounterReset       = 0,           //  USER PARAMETER - Reset Telem Data Every (0 = Never, 1 = Day, 2 = Week, 3 = Month, 4 = Year) 
 errorTimeLimit          = 1000,        //  USER PARAMETER - Time interval for reseting error counter (milliseconds)  
@@ -159,19 +171,17 @@ electricalPrice         = 9.5000;      //   USER PARAMETER - Input electrical pr
 // the values below if you know what you are doing. The values below have been pre-calibrated for  //
 // MPPT charge controllers designed by TechBuilder (Angelo S. Casimiro)                            //
 //=================================================================================================//
-bool
+const bool
 ADS1015_Mode            = 1;          //  CALIB PARAMETER - Use 1 for ADS1015 ADC model use 0 for ADS1115 ADC model
-int
+const int
 ADC_GainSelect          = 2,          //  CALIB PARAMETER - ADC Gain Selection (0→±6.144V 3mV/bit, 1→±4.096V 2mV/bit, 2→±2.048V 1mV/bit)
 avgCountVS              = 3,          //  CALIB PARAMETER - Voltage Sensor Average Sampling Count (Recommended: 3)
-avgCountCS              = 4,          //  CALIB PARAMETER - Current Sensor Average Sampling Count (Recommended: 4)
-avgCountTS              = 500;        //  CALIB PARAMETER - Temperature Sensor Average Sampling Count
-float
+avgCountCS              = 4;          //  CALIB PARAMETER - Current Sensor Average Sampling Count (Recommended: 4)
+const float
 inVoltageDivRatio       = 40.2156,    //  CALIB PARAMETER - Input voltage divider sensor ratio (change this value to calibrate voltage sensor)
 outVoltageDivRatio      = 24.5000,    //  CALIB PARAMETER - Output voltage divider sensor ratio (change this value to calibrate voltage sensor)
 vOutSystemMax           = 50.0000,    //  CALIB PARAMETER - 
 cOutSystemMax           = 50.0000,    //  CALIB PARAMETER - 
-ntcResistance           = 10000.00,   //  CALIB PARAMETER - NTC temp sensor's resistance. Change to 10000.00 if you are using a 10k NTC
 voltageDropout          = 1.0000,     //  CALIB PARAMETER - Buck regulator's dropout voltage (DOV is present due to Max Duty Cycle Limit)
 voltageBatteryThresh    = 1.5000,     //  CALIB PARAMETER - Power cuts-off when this voltage is reached (Output V)
 currentInAbsolute       = 31.0000,    //  CALIB PARAMETER - Maximum Input Current The System Can Handle (A - Input)
@@ -179,11 +189,9 @@ currentOutAbsolute      = 50.0000,    //  CALIB PARAMETER - Maximum Output Curre
 PPWM_margin             = 99.5000,    //  CALIB PARAMETER - Minimum Operating Duty Cycle for Predictive PWM (%)
 PWM_MaxDC               = 97.0000,    //  CALIB PARAMETER - Maximum Operating Duty Cycle (%) 90%-97% is good
 efficiencyRate          = 1.0000,     //  CALIB PARAMETER - Theroretical Buck Efficiency (% decimal)
-currentMidPoint         = 2.5250,     //  CALIB PARAMETER - Current Sensor Midpoint (V)
 currentSens             = 0.0000,     //  CALIB PARAMETER - Current Sensor Sensitivity (V/A)
 currentSensV            = 0.0660,     //  CALIB PARAMETER - Current Sensor Sensitivity (mV/A)
 vInSystemMin            = 10.000;     //  CALIB PARAMETER - 
-
 //===================================== SYSTEM PARAMETERS =========================================//
 // Do not change parameter values in this section. The values below are variables used by system   //
 // processes. Changing the values can damage the MPPT hardware. Kindly leave it as is! However,    //
@@ -220,10 +228,9 @@ OOV                   = 0,           // SYSTEM PARAMETER -
 OOC                   = 0,           // SYSTEM PARAMETER - 
 OTE                   = 0;           // SYSTEM PARAMETER - 
 int
+fanSpeed              = 0,           // SYSTEM PARAMETER - Fan speed in percentage (0 -> 100)
 inputSource           = 0,           // SYSTEM PARAMETER - 0 = MPPT has no power source, 1 = MPPT is using solar as source, 2 = MPPTis using battery as power source
-avgStoreTS            = 0,           // SYSTEM PARAMETER - Temperature Sensor uses non invasive averaging, this is used an accumulator for mean averaging
 temperature           = 0,           // SYSTEM PARAMETER -
-sampleStoreTS         = 0,           // SYSTEM PARAMETER - TS AVG nth Sample
 pwmMax                = 0,           // SYSTEM PARAMETER -
 pwmMaxLimited         = 0,           // SYSTEM PARAMETER -
 PWM                   = 0,           // SYSTEM PARAMETER -
@@ -252,7 +259,6 @@ voltageInputPrev      = 0.0000,      // SYSTEM PARAMETER - Previously stored inp
 voltageOutput         = 0.0000,      // SYSTEM PARAMETER - Input voltage (battery voltage)
 currentInput          = 0.0000,      // SYSTEM PARAMETER - Output power (battery or charing voltage)
 currentOutput         = 0.0000,      // SYSTEM PARAMETER - Output current (battery or charing current in Amperes)
-TSlog                 = 0.0000,      // SYSTEM PARAMETER - Part of NTC thermistor thermal sensing code
 ADC_BitReso           = 0.0000,      // SYSTEM PARAMETER - System detects the approriate bit resolution factor for ADS1015/ADS1115 ADC
 daysRunning           = 0.0000,      // SYSTEM PARAMETER - Stores the total number of days the MPPT device has been running since last powered
 Wh                    = 0.0000,      // SYSTEM PARAMETER - Stores the accumulated energy harvested (Watt-Hours)
@@ -261,8 +267,9 @@ MWh                   = 0.0000,      // SYSTEM PARAMETER - Stores the accumulate
 loopTime              = 0.0000,      // SYSTEM PARAMETER -
 outputDeviation       = 0.0000,      // SYSTEM PARAMETER - Output Voltage Deviation (%)
 buckEfficiency        = 0.0000,      // SYSTEM PARAMETER - Measure buck converter power conversion efficiency (only applicable to my dual current sensor version)
-floatTemp             = 0.0000,
-vOutSystemMin         = 0.0000;     //  CALIB PARAMETER - 
+floatTemp             = 0.0000,      // SYSTEM PARAMETER - Used for LCD menu
+vOutSystemMin         = 0.0000,      //  CALIB PARAMETER - 
+currentMidPoint       = 2.5250;      //  CALIB PARAMETER - Current Sensor Midpoint (V)
 unsigned long 
 currentErrorMillis    = 0,           //SYSTEM PARAMETER -
 currentButtonMillis   = 0,           //SYSTEM PARAMETER -
@@ -291,14 +298,16 @@ secondsElapsed        = 0;           //SYSTEM PARAMETER -
 // setups and loops. The xTaskCreatePinnedToCore() freeRTOS function allows you to access the      //
 // unused ESP32 core through Arduino. Yes it does multicore processes simultaneously!              // 
 //=================================================================================================//
+#include "fan.h"
+Fan fan;
 
 //================= CORE0: SETUP (DUAL CORE MODE) =====================//
 void coreTwo(void * pvParameters){
- setupWiFi();                                              //TAB#7 - WiFi Initialization
+  setupWiFi();                                              //TAB#7 - WiFi Initialization
 //================= CORE0: LOOP (DUAL CORE MODE) ======================//
   while(1){
     Wireless_Telemetry();                                   //TAB#7 - Wireless telemetry (WiFi & Bluetooth)
-    
+    int fanSpeed = fan.Handle(temperature);                 //Fan.h - Handle the fan
 }}
 //================== CORE1: SETUP (DUAL CORE MODE) ====================//
 void setup() { 
@@ -311,8 +320,7 @@ void setup() {
   pinMode(backflow_MOSFET,OUTPUT);                          
   pinMode(buck_EN,OUTPUT);
   pinMode(LED,OUTPUT); 
-  pinMode(FAN,OUTPUT);
-  pinMode(TS,INPUT); 
+  pinMode(TEMP_SENSOR_PIN,INPUT); 
   pinMode(ADC_ALERT,INPUT);
   pinMode(buttonLeft,INPUT); 
   pinMode(buttonRight,INPUT); 
