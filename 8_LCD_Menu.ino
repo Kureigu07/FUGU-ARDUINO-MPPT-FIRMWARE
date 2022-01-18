@@ -80,9 +80,7 @@ void displayConfig4(){
   lcd.setCursor(0,0);lcd.print("TEMPERATURE STAT");
   lcd.setCursor(0,1);lcd.print(temperature);lcd.print((char)223);lcd.print("C");padding100(temperature);
   lcd.setCursor(8,1);lcd.print("FAN");
-  lcd.setCursor(12,1);
-  if(fanStatus==1){lcd.print("ON ");}
-  else{lcd.print("OFF");}
+  lcd.setCursor(12,1);lcd.print(fanSpeed);lcd.print("%");
 }
 void displayConfig5(){
   lcd.setCursor(0,0);lcd.print(" SETTINGS MENU  ");
@@ -111,7 +109,7 @@ void cancelledMessageLCD(){
 void LCD_Menu(){
   int 
   menuPages          = 4,
-  subMenuPages       = 12,
+  subMenuPages       = 11,
   longPressTime      = 3000,
   longPressInterval  = 500,
   shortPressInterval = 100;
@@ -136,6 +134,43 @@ void LCD_Menu(){
     //--------------------------- SETTINGS MENU PAGES: ---------------------------// 
     ///// SETTINGS MENU ITEM: SUPPLY ALGORITHM SELECT /////
     if(subMenuPage==0){
+      lcd.setCursor(0,0);lcd.print("MPPT ALGORITHM  ");
+      if(setMenuPage==1){lcd.setCursor(0,1);lcd.print(" >");}
+      else{lcd.setCursor(0,1);lcd.print("= ");}
+      lcd.setCursor(2,1);
+      if(MpptMode==1)     {lcd.print("P&O           ");}
+      else if(MpptMode==2){lcd.print("INC. COND.    ");}
+      else if(MpptMode==3){lcd.print("VWS           ");}
+      else{lcd.print("PSU MODE      ");}
+      //SET MENU - INTMODETYPE
+      if(setMenuPage==0){intTemp = backlightSleepMode;}
+      else{
+        if(digitalRead(buttonBack)==1){while(digitalRead(buttonBack)==1){}fanMode = intTemp;cancelledMessageLCD();setMenuPage=0;} 
+        if(digitalRead(buttonSelect)==1){while(digitalRead(buttonSelect)==1){}saveSettings();setMenuPage=0;savedMessageLCD();}     
+        if(digitalRead(buttonRight)==1){                           //Right button press (increments setting values)
+          MpptMode++;                                              //Increment by 1
+          MpptMode = constrain(MpptMode,0,3);                      //Limit settings values to a range
+          lcd.setCursor(2,1);
+          if(MpptMode==1)     {lcd.print("P&O           ");}
+          else if(MpptMode==2){lcd.print("INC. COND.    ");}
+          else if(MpptMode==3){lcd.print("VWS           ");}
+          else{lcd.print("PSU MODE      ");}
+          while(digitalRead(buttonRight)==1){}
+        }
+        else if(digitalRead(buttonLeft)==1){                        //Left button press (decrements setting values)
+          MpptMode--;                                               //Increment by 1
+          MpptMode = constrain(MpptMode,0,3);                       //Limit settings values to a range
+          lcd.setCursor(2,1);
+          if(MpptMode==1)     {lcd.print("P&O           ");}
+          else if(MpptMode==2){lcd.print("INC. COND.    ");}
+          else if(MpptMode==3){lcd.print("VWS           ");}
+          else{lcd.print("PSU MODE      ");}
+          while(digitalRead(buttonLeft)==1){}
+        }
+      }
+    }
+/*
+      if(subMenuPage==0){
       lcd.setCursor(0,0);lcd.print("SUPPLY ALGORITHM");
       if(setMenuPage==1){lcd.setCursor(0,1);lcd.print(" >");}
       else{lcd.setCursor(0,1);lcd.print("= ");}
@@ -153,8 +188,7 @@ void LCD_Menu(){
         if(digitalRead(buttonSelect)==1){while(digitalRead(buttonSelect)==1){}saveSettings();setMenuPage=0;savedMessageLCD();}
       }     
     }
-
-    ///// SETTINGS MENU ITEM: CHARER/PSU MODE /////
+*/
     else if(subMenuPage==1){
       lcd.setCursor(0,0);lcd.print("CHARGER/PSU MODE");
       if(setMenuPage==1){lcd.setCursor(0,1);lcd.print(" >");}
@@ -173,7 +207,6 @@ void LCD_Menu(){
         if(digitalRead(buttonSelect)==1){while(digitalRead(buttonSelect)==1){}saveSettings();setMenuPage=0;savedMessageLCD();}
       }     
     }
-
     
     ///// SETTINGS MENU ITEM: MAX BATTERY V /////
     else if(subMenuPage==2){
@@ -364,20 +397,20 @@ void LCD_Menu(){
       else{
         if(digitalRead(buttonBack)==1){while(digitalRead(buttonBack)==1){}fanTriggerTemperature = intTemp;cancelledMessageLCD();setMenuPage=0;} 
         if(digitalRead(buttonSelect)==1){while(digitalRead(buttonSelect)==1){}saveSettings();setMenuPage=0;savedMessageLCD();}     
-        if(digitalRead(buttonRight)==1){                                              //Right button press (increments setting values)
+        if(digitalRead(buttonRight)==1){                                                   //Right button press (increments setting values)
           while(digitalRead(buttonRight)==1){   
             fanTriggerTemperature++;                                                       //Increment by 1
-            fanTriggerTemperature = constrain(fanTriggerTemperature,0,100);                       //Limit settings values to a range
+            fanTriggerTemperature = constrain(fanTriggerTemperature,0,100);                //Limit settings values to a range
             lcd.setCursor(2,1);lcd.print(fanTriggerTemperature);delay(shortPressInterval); //Display settings data                               
-            lcd.print((char)223);lcd.print("C    ");                                //Display unit
+            lcd.print((char)223);lcd.print("C    ");                                       //Display unit
           } 
         }
-        else if(digitalRead(buttonLeft)==1){                                        //Left button press (decrements setting values)
+        else if(digitalRead(buttonLeft)==1){                                               //Left button press (decrements setting values)
           while(digitalRead(buttonLeft)==1){ 
             fanTriggerTemperature--;                                                       //Increment by 1
-            fanTriggerTemperature = constrain(fanTriggerTemperature,0,100);                       //Limit settings values to a range
+            fanTriggerTemperature = constrain(fanTriggerTemperature,0,100);                //Limit settings values to a range
             lcd.setCursor(2,1);lcd.print(fanTriggerTemperature);delay(shortPressInterval); //Display settings data                               
-            lcd.print((char)223);lcd.print("C    ");                                //Display unit
+            lcd.print((char)223);lcd.print("C    ");                                       //Display unit
           } 
         }
       }         
@@ -432,28 +465,8 @@ void LCD_Menu(){
         if(digitalRead(buttonSelect)==1){while(digitalRead(buttonSelect)==1){}saveSettings();setMenuPage=0;savedMessageLCD();}
       }       
     }
-
-    ///// SETTINGS MENU ITEM: AUTOLOAD /////
-    else if(subMenuPage==9){
-      lcd.setCursor(0,0);lcd.print("AUTOLOAD FEATURE");
-      if(setMenuPage==1){lcd.setCursor(0,1);lcd.print(" >");}
-      else{lcd.setCursor(0,1);lcd.print("= ");}
-      if(flashMemLoad==1){lcd.print("ENABLED       ");}
-      else{lcd.print("DISABLED      ");}
-
-      //SET MENU - BOOLTYPE
-      if(setMenuPage==0){boolTemp = flashMemLoad;}
-      else{
-        if(digitalRead(buttonRight)==1||digitalRead(buttonLeft)==1){
-          while(digitalRead(buttonRight)==1||digitalRead(buttonLeft)==1){}
-          if(flashMemLoad==1){flashMemLoad=0;}else{flashMemLoad=1;}
-        }
-        if(digitalRead(buttonBack)==1){while(digitalRead(buttonBack)==1){}flashMemLoad = boolTemp;cancelledMessageLCD();setMenuPage=0;} 
-        if(digitalRead(buttonSelect)==1){while(digitalRead(buttonSelect)==1){}saveAutoloadSettings();setMenuPage=0;savedMessageLCD();}
-      }       
-    }
     ///// SETTINGS MENU ITEM: BACKLIGHT SLEEP /////
-    else if(subMenuPage==10){
+    else if(subMenuPage==9){
       lcd.setCursor(0,0);lcd.print("BACKLIGHT SLEEP ");
       if(setMenuPage==1){lcd.setCursor(0,1);lcd.print(" >");}
       else{lcd.setCursor(0,1);lcd.print("= ");}
@@ -509,7 +522,7 @@ void LCD_Menu(){
       }         
     }
     ///// SETTINGS MENU ITEM: FACTORY RESET /////
-    else if(subMenuPage==11){
+    else if(subMenuPage==10){
       if(setMenuPage==0){
         lcd.setCursor(0,0);lcd.print("FACTORY RESET   ");
         lcd.setCursor(0,1);lcd.print("> PRESS SELECT  ");  

@@ -44,7 +44,7 @@ void Charging_Algorithm(){
     }  
     else{                                                                            //NO ERROR PRESENT  - Continue power conversion              
       /////////////////////// CC-CV BUCK PSU ALGORITHM ////////////////////////////// 
-      if(MPPT_Mode==0){                                                              //CC-CV PSU MODE
+      if(MpptMode==0){                                                              //CC-CV PSU MODE
         if(currentOutput>currentCharging)       {PWM--;}                             //Current Is Above → Decrease Duty Cycle
         else if(voltageOutput>voltageBatteryMax){PWM--;}                             //Voltage Is Above → Decrease Duty Cycle   
         else if(voltageOutput<voltageBatteryMax){PWM++;}                             //Increase duty cycle when output is below charging voltage (for CC-CV only mode)

@@ -22,13 +22,13 @@ void Onboard_Telemetry(){
       Serial.print(" OOC:");   Serial.print(OOC);
       Serial.print(" OTE:");   Serial.print(OTE); 
       Serial.print(" REC:");   Serial.print(REC);
-      Serial.print(" MPPTA:"); Serial.print(MPPT_Mode);     
+      Serial.print(" MPPT:");  Serial.print(MpptMode);     
       Serial.print(" CM:");    Serial.print(output_Mode);   //Charging Mode
       
       Serial.print(" "); 
       Serial.print(" BYP:");   Serial.print(bypassEnable);
       Serial.print(" EN:");    Serial.print(buckEnable);
-      Serial.print(" FAN:");   Serial.print(fanStatus);    
+      Serial.print(" FAN:");   Serial.print(fanSpeed);Serial.print("%");    
       Serial.print(" WiFi:");  Serial.print(WIFI);      
       Serial.print(" ");  
       Serial.print(" PI:");    Serial.print(powerInput,0); 
@@ -60,7 +60,7 @@ void Onboard_Telemetry(){
       Serial.print(" Wh:");    Serial.print(Wh,2); 
       Serial.print(" Temp:");  Serial.print(temperature,1);  
       Serial.print(" EN:");    Serial.print(buckEnable);
-      Serial.print(" FAN:");   Serial.print(fanStatus);   
+      Serial.print(" FAN:");   Serial.print(fanSpeed);Serial.print("%");  
       Serial.print(" SOC:");   Serial.print(batteryPercent);Serial.print("%"); 
       Serial.print(" T:");     Serial.print(secondsElapsed); 
       Serial.print(" LoopT:"); Serial.print(loopTime,3);Serial.print("ms");  
@@ -75,7 +75,7 @@ void Onboard_Telemetry(){
       Serial.print(" ");       Serial.print(Wh,2); 
       Serial.print(" ");       Serial.print(temperature,1);  
       Serial.print(" ");       Serial.print(buckEnable);
-      Serial.print(" ");       Serial.print(fanStatus);   
+      Serial.print(" ");       Serial.print(fanSpeed);   
       Serial.print(" ");       Serial.print(batteryPercent);
       Serial.print(" ");       Serial.print(secondsElapsed); 
       Serial.print(" ");       Serial.print(loopTime,3);
