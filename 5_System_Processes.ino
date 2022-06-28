@@ -32,6 +32,7 @@ void factoryReset(){
   EEPROM.write(10,1); //STORE: Enable WiFi (Boolean)
   EEPROM.write(13,0); //STORE: LCD backlight sleep timer (default: 0 = never)
   EEPROM.commit();
+  Serial.println("> FACTORY RESET");
   loadSettings();
 }
 
@@ -46,6 +47,7 @@ void loadSettings(){
   temperatureMax        = EEPROM.read(EEPROM_MAXBOARDTEMPERATURE);   // Load saved shutdown temperature settings
   enableWiFi         = EEPROM.read(10);                      // Load saved WiFi enable settings  
   backlightSleepMode = EEPROM.read(13);                      // Load saved lcd backlight sleep timer
+  Serial.println("> FLASH MEMORY: SAVED DATA LOADED");    //Startup message
 }
 
 void saveSettings(){
@@ -75,12 +77,12 @@ void saveSettings(){
 }
 void initializeFlashAutoload(){
   if(disableFlashAutoLoad==0){
-    if(EEPROM.read(0)==255){
+    if(EEPROM.read(0)>1){
       factoryReset();
-      Serial.println("> FACTORY RESET");
     }
+    else{
     loadSettings();                    //Load stored settings from flash memory
-    Serial.println("> FLASH MEMORY: SAVED DATA LOADED");    //Startup message  
+    }
   } 
   else{
   Serial.println("> FIRMWARE SETTINGS LOADED");
