@@ -21,10 +21,10 @@ void factoryReset(){
   EEPROM.write(EEPROM_MPPTMODE,1);               //STORE: MPPT algorithm (1 = P&O)
   EEPROM.write(12,1); //STORE: Charger/PSU Mode Selection (1 = Charger Mode)
   EEPROM.write(1,12); //STORE: Max Battery Voltage (whole)
-  EEPROM.write(2,0);  //STORE: Max Battery Voltage (decimal)
+  EEPROM.write(2,3);  //STORE: Max Battery Voltage (decimal)
   EEPROM.write(3,9);  //STORE: Min Battery Voltage (whole)
-  EEPROM.write(4,0);  //STORE: Min Battery Voltage (decimal) 
-  EEPROM.write(5,30); //STORE: Charging Current (whole)
+  EEPROM.write(4,5);  //STORE: Min Battery Voltage (decimal) 
+  EEPROM.write(5,1);  //STORE: Charging Current (whole)
   EEPROM.write(6,0);  //STORE: Charging Current (decimal)
   EEPROM.write(EEPROM_FANMODE,3);                //STORE: Fan mode (decimal)
   EEPROM.write(EEPROM_FANTRIGGERTEMPERATURE,60); //STORE: Fan trigger temperature (Integer)
@@ -75,6 +75,14 @@ void saveSettings(){
 }
 void initializeFlashAutoload(){
   if(disableFlashAutoLoad==0){
-    loadSettings();                    //Load stored settings from flash memory  
+    if(EEPROM.read(0)==255){
+      factoryReset();
+      Serial.println("> FACTORY RESET");
+    }
+    loadSettings();                    //Load stored settings from flash memory
+    Serial.println("> FLASH MEMORY: SAVED DATA LOADED");    //Startup message  
   } 
+  else{
+  Serial.println("> FIRMWARE SETTINGS LOADED");
+  }
 }
